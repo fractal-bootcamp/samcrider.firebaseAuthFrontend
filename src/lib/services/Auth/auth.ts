@@ -1,7 +1,10 @@
 import axios from "axios";
 import { UserCookieInputDto, UserInputDto } from "./types";
 import { auth } from "../../firebase/config";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 
 const baseUrl: string = "/api/auth";
 
@@ -40,9 +43,38 @@ const signup = async (credentials: UserInputDto) => {
 };
 
 const login = async (credentials: UserInputDto) => {
-  const res = await axios.post(`${baseUrl}/login`, credentials);
+  try {
+    // try to log in the user
+    const firebaseUser = await signInWithEmailAndPassword(
+      auth,
+      credentials.email,
+      credentials.password
+    );
 
-  return res.data;
+    if (!firebaseUser) {
+      throw new Error("User doesn't exist in firebase");
+    }
+
+    // get authToken
+    const authToken = await firebaseUser.user.getIdToken();
+
+    // if firebaseUser, post to backend to get db user
+    const res = await axios.post(
+      `${baseUrl}/login`,
+      { email: firebaseUser.user.email, firebaseId: firebaseUser.user.uid },
+      {
+        headers: { Authorization: `Bearer ${authToken}` },
+      }
+    );
+
+    console.log("hello login res", res);
+
+    // return found db user
+    return res.data;
+  } catch (e) {
+    alert("Login failed, reload and try again");
+    console.error(e);
+  }
 };
 
 const hydrate = async (credentials: UserCookieInputDto) => {
