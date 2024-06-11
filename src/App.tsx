@@ -1,33 +1,35 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import Login from "./components/Login/component";
 import authService from "./lib/services/Auth/auth";
 import Signup from "./components/Signup/component";
 import { UserInputDto, UserOutputDto } from "./lib/services/Auth/types";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { auth } from "./lib/firebase/config";
 
 const App = () => {
   // initialize state
   const [user, setUser] = useState<UserOutputDto | null>(null);
 
-  // // function to hydrate user if cookie exists
-  // const hydrateAuth = async () => {
-  //   const currentSessionCookie = document.cookie;
-  //   if (!currentSessionCookie) return setUser(null);
+  // function to hydrate user if cookie exists
+  const hydrateAuth = async (currentUser: User) => {
+    const hydratedUser: UserOutputDto = await authService.hydrate(currentUser);
 
-  //   console.log("hydrate auth cookie from storage", currentSessionCookie);
-  //   const initialUser: UserOutputDto = await authService.hydrate({
-  //     cookie: currentSessionCookie,
-  //   });
+    if (hydratedUser) {
+      setUser(hydratedUser);
+    }
+  };
+  
+  // use hydrateAuth
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        hydrateAuth(currentUser)
+      }
+    })
 
-  //   if (initialUser) {
-  //     setUser(initialUser);
-  //   }
-  // };
-
-  // // use hydrateAuth
-  // useEffect(() => {
-  //   hydrateAuth();
-  // }, []);
+    return unsubscribe;
+  }, []);
 
   const handleSignup = async (signupObj: UserInputDto) => {
     try {
