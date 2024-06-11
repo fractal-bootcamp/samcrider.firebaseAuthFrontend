@@ -1,9 +1,11 @@
 import axios from "axios";
-import { UserCookieInputDto, UserInputDto } from "./types";
+import { UserInputDto } from "./types";
 import { auth } from "../../firebase/config";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signOut,
+  User,
 } from "firebase/auth";
 
 const baseUrl: string = "/api/auth";
@@ -77,16 +79,22 @@ const login = async (credentials: UserInputDto) => {
   }
 };
 
-const hydrate = async (credentials: UserCookieInputDto) => {
-  console.log("cookie in auth service hydate function", credentials.cookie);
-  const res = await axios.post(`${baseUrl}/hydrate`, credentials);
+const hydrate = async (currentUser: User) => {
+  console.log(auth.currentUser);
+  const authToken = await currentUser.getIdToken();
+  if (!authToken) {
+    return console.log("no current user");
+  }
+
+  const res = await axios.get(`${baseUrl}/hydrate`, {
+    headers: { Authorization: `Bearer ${authToken}` },
+  });
 
   return res.data;
 };
 
 const logout = async () => {
-  const res = await axios.get(`${baseUrl}/logout`);
-  return res.data;
+  await signOut(auth);
 };
 
 export default { login, logout, signup, hydrate };
