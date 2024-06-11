@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./App.css";
 import Login from "./components/Login/component";
 import authService from "./lib/services/Auth/auth";
@@ -9,29 +9,30 @@ const App = () => {
   // initialize state
   const [user, setUser] = useState<UserOutputDto | null>(null);
 
-  // function to hydrate user if cookie exists
-  const hydrateAuth = async () => {
-    const currentSessionCookie = document.cookie;
-    if (!currentSessionCookie) return setUser(null);
+  // // function to hydrate user if cookie exists
+  // const hydrateAuth = async () => {
+  //   const currentSessionCookie = document.cookie;
+  //   if (!currentSessionCookie) return setUser(null);
 
-    console.log("hydrate auth cookie from storage", currentSessionCookie);
-    const initialUser: UserOutputDto = await authService.hydrate({
-      cookie: currentSessionCookie,
-    });
+  //   console.log("hydrate auth cookie from storage", currentSessionCookie);
+  //   const initialUser: UserOutputDto = await authService.hydrate({
+  //     cookie: currentSessionCookie,
+  //   });
 
-    if (initialUser) {
-      setUser(initialUser);
-    }
-  };
+  //   if (initialUser) {
+  //     setUser(initialUser);
+  //   }
+  // };
 
-  // use hydrateAuth
-  useEffect(() => {
-    hydrateAuth();
-  }, []);
+  // // use hydrateAuth
+  // useEffect(() => {
+  //   hydrateAuth();
+  // }, []);
 
   const handleSignup = async (signupObj: UserInputDto) => {
     try {
       const newUser: UserOutputDto = await authService.signup(signupObj);
+      console.log(newUser)
       setUser(newUser);
     } catch (error) {
       console.error(error);
