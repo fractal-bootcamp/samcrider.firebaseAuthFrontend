@@ -1,15 +1,42 @@
 import axios from "axios";
 import { UserCookieInputDto, UserInputDto } from "./types";
+import { auth } from "../../firebase/config";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 const baseUrl: string = "/api/auth";
 
 const signup = async (credentials: UserInputDto) => {
-  const res = await axios.post(`${baseUrl}/signup`, credentials);
+  try {
+    // try to create a firebase user
+    const firebaseUser = await createUserWithEmailAndPassword(
+      auth,
+      credentials.email,
+      credentials.password
+    );
+    if (!firebaseUser) {
+      throw new Error("Failed to create firebase user");
+    }
 
-  console.log(res);
-  console.log(res.data);
+    // get authToken
+    const authToken = await firebaseUser.user.getIdToken();
 
-  return res.data;
+    // if firebaseuser, post to backend with authtoken to add user to db
+    const res = await axios.post(
+      `${baseUrl}/signup`,
+      { email: firebaseUser.user.email, firebaseId: firebaseUser.user.uid },
+      {
+        headers: { Authorization: `Bearer ${authToken}` },
+      }
+    );
+
+    console.log("hello signup res", res);
+
+    // return the newly created user from db
+    return res.data;
+  } catch (e) {
+    alert("Signup failed, reload and try again");
+    console.error(e);
+  }
 };
 
 const login = async (credentials: UserInputDto) => {
